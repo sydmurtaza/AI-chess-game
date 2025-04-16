@@ -1,3 +1,5 @@
+AI Chess Game
+
 Console Chess Game
 A command-line chess game built in Python where you can play against an AI opponent. The game features a visually appealing CLI with colored pieces, a larger board display, and a Min-Max algorithm with Alpha-Beta pruning for the AI's moves.
 Features
