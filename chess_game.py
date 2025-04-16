@@ -13,14 +13,17 @@ BOARD_SIZE = 8
 SQUARE_SIZE = WINDOW_SIZE // BOARD_SIZE
 FPS = 60
 
-# Colors
+# Enhanced Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-LIGHT_SQUARE = (240, 217, 181)
-DARK_SQUARE = (181, 136, 99)
-HIGHLIGHT = (130, 151, 105)
-VALID_MOVE = (119, 149, 86)
+LIGHT_SQUARE = (238, 238, 210)  # Warm light color
+DARK_SQUARE = (118, 150, 86)    # Forest green
+HIGHLIGHT = (186, 202, 68)      # Subtle highlight
+VALID_MOVE = (214, 214, 189)    # Soft indicator
 TEXT_COLOR = (50, 50, 50)
+COORDINATES_COLOR = (120, 120, 120)
+STATUS_BAR_BG = (45, 45, 45)
+STATUS_BAR_TEXT = (220, 220, 220)
 
 # AI Constants
 PIECE_VALUES = {
@@ -40,8 +43,11 @@ class Piece:
 
 class ChessGame:
     def __init__(self):
-        # Initialize display
-        self.screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE + 100))
+        # Initialize display with padding for coordinates
+        self.padding = 40  # Padding for coordinates
+        self.total_width = WINDOW_SIZE + 2 * self.padding
+        self.total_height = WINDOW_SIZE + 2 * self.padding + 100  # Extra 100 for status bar
+        self.screen = pygame.display.set_mode((self.total_width, self.total_height))
         pygame.display.set_caption("Python Chess vs AI")
         self.clock = pygame.time.Clock()
         
@@ -61,7 +67,8 @@ class ChessGame:
         
         # Initialize fonts
         self.font = pygame.font.SysFont('Arial', 24)
-        self.small_font = pygame.font.SysFont('Arial', 16)
+        self.small_font = pygame.font.SysFont('Arial', 18)
+        self.coord_font = pygame.font.SysFont('Arial', 16)
 
     def _load_piece_images(self) -> Dict:
         pieces = {}
@@ -232,8 +239,42 @@ class ChessGame:
                 from_pos, to_pos = random.choice(moves)
                 self.make_move(from_pos, to_pos)
 
+    def draw_coordinates(self):
+        # Draw file coordinates (a-h)
+        for i in range(BOARD_SIZE):
+            # Bottom coordinates
+            text = chr(97 + i)
+            surface = self.coord_font.render(text, True, COORDINATES_COLOR)
+            x = self.padding + i * SQUARE_SIZE + SQUARE_SIZE // 2 - surface.get_width() // 2
+            y = self.padding + WINDOW_SIZE + 5
+            self.screen.blit(surface, (x, y))
+            
+            # Top coordinates
+            y = self.padding - 20
+            self.screen.blit(surface, (x, y))
+
+        # Draw rank coordinates (1-8)
+        for i in range(BOARD_SIZE):
+            # Left coordinates
+            text = str(8 - i)
+            surface = self.coord_font.render(text, True, COORDINATES_COLOR)
+            x = self.padding - 20
+            y = self.padding + i * SQUARE_SIZE + SQUARE_SIZE // 2 - surface.get_height() // 2
+            self.screen.blit(surface, (x, y))
+            
+            # Right coordinates
+            x = self.padding + WINDOW_SIZE + 5
+            self.screen.blit(surface, (x, y))
+
     def draw_board(self):
-        # Draw chess board
+        # Draw chess board background
+        pygame.draw.rect(
+            self.screen,
+            (30, 30, 30),
+            (0, 0, self.total_width, self.total_height)
+        )
+
+        # Draw board squares with padding
         for row in range(BOARD_SIZE):
             for col in range(BOARD_SIZE):
                 color = LIGHT_SQUARE if (row + col) % 2 == 0 else DARK_SQUARE
@@ -244,12 +285,29 @@ class ChessGame:
                     self.selected_piece[1] == col):
                     color = HIGHLIGHT
                 elif [row, col] in self.valid_moves:
-                    color = VALID_MOVE
+                    # Draw move indicator circle
+                    base_color = LIGHT_SQUARE if (row + col) % 2 == 0 else DARK_SQUARE
+                    pygame.draw.rect(
+                        self.screen,
+                        base_color,
+                        (self.padding + col * SQUARE_SIZE, 
+                         self.padding + row * SQUARE_SIZE, 
+                         SQUARE_SIZE, SQUARE_SIZE)
+                    )
+                    # Draw circle indicator
+                    circle_center = (
+                        self.padding + col * SQUARE_SIZE + SQUARE_SIZE // 2,
+                        self.padding + row * SQUARE_SIZE + SQUARE_SIZE // 2
+                    )
+                    pygame.draw.circle(self.screen, VALID_MOVE, circle_center, SQUARE_SIZE // 4)
+                    continue
                 
                 pygame.draw.rect(
                     self.screen,
                     color,
-                    (col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+                    (self.padding + col * SQUARE_SIZE, 
+                     self.padding + row * SQUARE_SIZE, 
+                     SQUARE_SIZE, SQUARE_SIZE)
                 )
                 
                 # Draw pieces
@@ -257,21 +315,24 @@ class ChessGame:
                 if piece:
                     piece_surface = self.piece_images[piece.color][piece.type]
                     piece_rect = piece_surface.get_rect(center=(
-                        col * SQUARE_SIZE + SQUARE_SIZE // 2,
-                        row * SQUARE_SIZE + SQUARE_SIZE // 2
+                        self.padding + col * SQUARE_SIZE + SQUARE_SIZE // 2,
+                        self.padding + row * SQUARE_SIZE + SQUARE_SIZE // 2
                     ))
                     self.screen.blit(piece_surface, piece_rect)
 
+        # Draw coordinates
+        self.draw_coordinates()
+
         # Draw status bar
-        status_rect = pygame.Rect(0, WINDOW_SIZE, WINDOW_SIZE, 100)
-        pygame.draw.rect(self.screen, (50, 50, 50), status_rect)
+        status_rect = pygame.Rect(0, self.total_height - 100, self.total_width, 100)
+        pygame.draw.rect(self.screen, STATUS_BAR_BG, status_rect)
         
-        # Draw current player
+        # Draw current player with enhanced styling
         player_text = f"Current Player: {'You (White)' if self.current_player == 'white' else 'AI (Black)'}"
-        text_surface = self.font.render(player_text, True, WHITE)
-        self.screen.blit(text_surface, (20, WINDOW_SIZE + 20))
+        text_surface = self.font.render(player_text, True, STATUS_BAR_TEXT)
+        self.screen.blit(text_surface, (20, self.total_height - 80))
         
-        # Draw game status
+        # Draw game status with enhanced styling
         status_text = ""
         if self.is_ai_thinking:
             status_text = "AI is thinking..."
@@ -283,8 +344,14 @@ class ChessGame:
             status_text = "Draw!"
         
         if status_text:
-            status_surface = self.font.render(status_text, True, WHITE)
-            self.screen.blit(status_surface, (20, WINDOW_SIZE + 60))
+            status_surface = self.font.render(status_text, True, STATUS_BAR_TEXT)
+            self.screen.blit(status_surface, (20, self.total_height - 40))
+
+        # Draw last move if available
+        if self.move_history:
+            last_move = f"Last move: {self.move_history[-1]}"
+            last_move_surface = self.small_font.render(last_move, True, STATUS_BAR_TEXT)
+            self.screen.blit(last_move_surface, (self.total_width - 250, self.total_height - 40))
 
     def make_move(self, from_pos: List[int], to_pos: List[int]):
         piece = self.board[from_pos[0]][from_pos[1]]
@@ -304,12 +371,17 @@ class ChessGame:
         if self.current_player == 'black' or self.is_ai_thinking:
             return
 
-        col = pos[0] // SQUARE_SIZE
-        row = pos[1] // SQUARE_SIZE
+        # Adjust click position for padding
+        adjusted_x = pos[0] - self.padding
+        adjusted_y = pos[1] - self.padding
         
-        # Ignore clicks outside the board
-        if row >= BOARD_SIZE:
+        # Check if click is within board boundaries
+        if (adjusted_x < 0 or adjusted_x >= WINDOW_SIZE or 
+            adjusted_y < 0 or adjusted_y >= WINDOW_SIZE):
             return
+        
+        col = adjusted_x // SQUARE_SIZE
+        row = adjusted_y // SQUARE_SIZE
         
         if self.selected_piece:
             if [row, col] in self.valid_moves:
