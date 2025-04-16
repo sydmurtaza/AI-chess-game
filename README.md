@@ -26,8 +26,8 @@ Supports algebraic notation for moves (e.g., e2e4).
 Installation
 
 Clone the Repository:
-git clone https://github.com/your-username/console-chess-game.git
-cd console-chess-game
+git clone  https://github.com/sydmurtaza/AI-chess-game.git
+cd AI-chess-game
 
 
 Ensure Python is Installed:
