@@ -26,6 +26,7 @@ export const ChessProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isAIThinking, setIsAIThinking] = useState(false);
 
   const makeMove = useCallback((from: Position, to: Position, isAIMove: boolean = false) => {
+<<<<<<< HEAD
     setBoard(currentBoard => {
       const newBoard = currentBoard.map(row => [...row]);
       const piece = newBoard[from[0]][from[1]];
@@ -49,6 +50,32 @@ export const ChessProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return newBoard;
     });
   }, []);
+=======
+    const newBoard = board.map(row => [...row]);
+    const piece = newBoard[from[0]][from[1]];
+    newBoard[to[0]][to[1]] = piece;
+    newBoard[from[0]][from[1]] = null;
+    
+    // Add move to history
+    const fromNotation = `${String.fromCharCode(97 + from[1])}${8 - from[0]}`;
+    const toNotation = `${String.fromCharCode(97 + to[1])}${8 - to[0]}`;
+    setMoveHistory(prev => [...prev, `${piece?.type} ${fromNotation}-${toNotation}`]);
+    
+    // Update board state
+    setBoard(newBoard);
+    
+    // Update current player
+    const nextPlayer = isAIMove ? 'white' : 'black';
+    setCurrentPlayer(nextPlayer);
+    
+    // Check for check/checkmate
+    const kingPos = findKing(newBoard, nextPlayer);
+    const inCheck = isKingInCheck(newBoard, kingPos, nextPlayer);
+    setIsCheck(inCheck);
+    
+    return newBoard;
+  }, [board]);
+>>>>>>> 1fe783bf865dca7bac67ba9b8d347abe1ea5dc98
 
   const handleSquareClick = useCallback((position: Position) => {
     // Prevent moves while AI is thinking
@@ -60,7 +87,11 @@ export const ChessProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (selectedPiece) {
       if (validMoves.some(move => move[0] === position[0] && move[1] === position[1])) {
+<<<<<<< HEAD
         makeMove(selectedPiece.position, position);
+=======
+        const newBoard = makeMove(selectedPiece.position, position);
+>>>>>>> 1fe783bf865dca7bac67ba9b8d347abe1ea5dc98
         setSelectedPiece(null);
         setValidMoves([]);
         
@@ -68,8 +99,12 @@ export const ChessProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setIsAIThinking(true);
         setTimeout(() => {
           if (!isCheckmate && !isDraw) {
+<<<<<<< HEAD
             // Get the current board state after the player's move
             const [from, to] = getBestMove(board);
+=======
+            const [from, to] = getBestMove(newBoard);
+>>>>>>> 1fe783bf865dca7bac67ba9b8d347abe1ea5dc98
             makeMove(from, to, true);
           }
           setIsAIThinking(false);
